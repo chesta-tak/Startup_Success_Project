@@ -1,0 +1,389 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Predict — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .prob-bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; }
+    .prob-bar-fill { height:100%; width:0%; transition: width .9s ease; border-radius:999px; }
+    .small-muted { font-size:.86rem; color:rgba(255,255,255,0.75); }
+    .result-title { font-size:1.125rem; }
+
+    /* Sticky result column */
+    @media(min-width:1024px){
+      #rightCol { position: sticky; top: 90px; }
+    }
+
+    /* SIMPLE SEARCH BOX DROPDOWN */
+    .search-box { 
+      position: relative;
+    }
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.65);
+      max-height: 160px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: none;
+      z-index: 20;
+    }
+    .search-results div {
+      padding: 8px;
+      cursor: pointer;
+      color: white;
+    }
+    .search-results div:hover {
+      background: rgba(0,255,255,0.25);
+    }
+
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-[#071024] to-[#0b3d91] min-h-screen text-white">
+
+  <!-- NAV -->
+  <nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+    <a href="index.html" class="text-2xl font-bold">Startup<span class="text-yellow-300">Lab</span></a>
+    <div class="flex items-center gap-4">
+      <a href="index.html" class="nav-item">Home</a>
+      <a href="dashboard.html" class="nav-item">Dashboard</a>
+      <a href="history.html" class="nav-item">History</a>
+      <a href="profile.html" class="nav-item">Profile</a>
+      <button onclick="logout()" class="underline text-white/90">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="max-w-6xl mx-auto p-6">
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+
+      <!-- LEFT -->
+      <div class="glass-card p-8 rounded-2xl hover-scale fade-in" data-aos="fade-right">
+        <h2 class="text-2xl font-bold mb-2">Predict Startup Success</h2>
+        <p class="small-muted mb-6">Try different industry / city / funding scenarios to see how the model responds.</p>
+
+        <div class="space-y-5">
+
+          <!-- Industry Searchable -->
+          <div>
+            <label class="block text-sm mb-1">Industry</label>
+
+            <div class="search-box">
+              <input id="industryInput" class="w-full p-3 rounded-md bg-white/10 text-white"
+                     placeholder="Search industry...">
+              <div id="industryResults" class="search-results"></div>
+            </div>
+          </div>
+
+          <!-- City Searchable -->
+          <div>
+            <label class="block text-sm mb-1">City</label>
+
+            <div class="search-box">
+              <input id="cityInput" class="w-full p-3 rounded-md bg-white/10 text-white"
+                     placeholder="Search city...">
+              <div id="cityResults" class="search-results"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Total Funding (INR)</label>
+            <input id="funding" type="number" class="w-full p-3 rounded-md bg-white/10 text-white"
+                   placeholder="e.g., 50000000"/>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Funding Rounds</label>
+            <input id="rounds" type="number" class="w-full p-3 rounded-md bg-white/10 text-white"
+                   placeholder="e.g., 2"/>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-3">
+            <button onclick="sendPredict()"
+                    class="btn-glow w-full py-3 rounded-lg bg-gradient-to-r from-yellow-300 to-orange-400 text-black font-semibold">
+              Predict
+            </button>
+            <button onclick="resetForm()" class="w-20 py-3 rounded-lg border border-white/10 text-white/90">Clear</button>
+          </div>
+
+          <div id="loader" class="hidden text-center mt-2">
+            <div class="inline-block p-3 bg-white/6 rounded-md">Predicting... ⏳</div>
+          </div>
+
+          <div id="formMsg" class="mt-2 text-sm"></div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <aside id="rightCol" class="space-y-6 fade-in">
+
+        <!-- Result -->
+        <div id="resultCard" class="hidden p-6 rounded-xl glass-card neon-blue"></div>
+
+        <!-- Info Box -->
+        <div class="glass-card p-6 rounded-xl">
+          <h3 class="font-semibold">How to read your results</h3>
+          <ul class="list-disc ml-5 mt-3 small-muted text-sm">
+            <li><b>Success Score</b> — overall estimated potential (0–100)</li>
+            <li><b>Probability</b> — model confidence</li>
+            <li><b>Recommendations</b> — ways to improve your odds</li>
+            <li><b>Similar Startups</b> — patterns from similar companies</li>
+          </ul>
+        </div>
+
+      </aside>
+
+    </section>
+  </main>
+
+  <footer class="text-center text-white/80 py-8">Made with ❤️ — Startup Success Prediction</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+  <script> AOS.init({ duration: 700 }); </script>
+
+  <script src="static/js/main.js"></script>
+
+<script>
+/* --------------------------- AUTH --------------------------- */
+if (!localStorage.getItem("token")) window.location.href = "login.html";
+
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "login.html";
+}
+
+/* ---------------------- SEARCHABLE DROPDOWNS ---------------------- */
+let industries = [];
+let cities = [];
+
+function attachSearch(inputId, resultsId, listArray) {
+    const input = document.getElementById(inputId);
+    const results = document.getElementById(resultsId);
+
+    input.addEventListener("input", () => {
+        const q = input.value.toLowerCase();
+        results.innerHTML = "";
+
+        if (!q) { results.style.display = "none"; return; }
+
+        const filtered = listArray.filter(v => v.toLowerCase().includes(q)).slice(0, 12);
+
+        filtered.forEach(item => {
+            const div = document.createElement("div");
+            div.textContent = item;
+            div.onclick = () => {
+                input.value = item;
+                results.style.display = "none";
+            };
+            results.appendChild(div);
+        });
+
+        results.style.display = filtered.length ? "block" : "none";
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!results.contains(e.target) && e.target !== input) {
+            results.style.display = "none";
+        }
+    });
+}
+
+/* ---------------------- LOAD CATEGORIES ---------------------- */
+async function loadCategories() {
+    try {
+        const res = await apiFetch("/api/categories");
+        const data = await res.json();
+
+        industries = data.industries;
+        cities = data.cities;
+
+        attachSearch("industryInput", "industryResults", industries);
+        attachSearch("cityInput", "cityResults", cities);
+
+    } catch (err) {
+        console.error("Category load error:", err);
+    }
+}
+
+/* ---------------------- SEND PREDICTION ---------------------- */
+async function sendPredict() {
+
+    const loader = document.getElementById("loader");
+    const resultCard = document.getElementById("resultCard");
+    const formMsg = document.getElementById("formMsg");
+
+    const industryValue = document.getElementById("industryInput").value;
+    const cityValue = document.getElementById("cityInput").value;
+    const fundingValue = document.getElementById("funding").value;
+    const roundsValue = document.getElementById("rounds").value;
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const email = user.email || "";
+
+    if (!industryValue || !cityValue || !fundingValue || !roundsValue) {
+        formMsg.innerText = "Please fill all fields.";
+        formMsg.className = "text-yellow-300";
+        return;
+    }
+
+    formMsg.innerText = "";
+    loader.classList.remove("hidden");
+    resultCard.classList.add("hidden");
+
+    try {
+        const res = await apiFetch("/api/predict", {
+            method: "POST",
+            body: JSON.stringify({
+                industry: industryValue,
+                city: cityValue,
+                funding_amount: fundingValue,
+                funding_rounds: roundsValue,
+                email: email
+            })
+        });
+
+        const data = await res.json();
+        loader.classList.add("hidden");
+
+        if (res.status !== 200) {
+            formMsg.innerText = data.error || "Prediction failed";
+            formMsg.className = "text-rose-300";
+            return;
+        }
+
+        const probability = (data.probability_success * 100).toFixed(1);
+        const score = data.success_score;
+
+        /* ---------- BUILD RESULT HTML ---------- */
+        let html = `
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="result-title font-semibold">${data.prediction === 1 ? 'Likely Successful ✅' : 'May Not Succeed ❌'}</div>
+              <div class="small-muted mt-1">Probability-based insight</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm small-muted">Score</div>
+              <div class="text-2xl font-bold text-yellow-300">${score}</div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="small-muted">Success Probability</div>
+            <div class="prob-bar">
+              <div id="probFill" class="prob-bar-fill" style="background:${data.prediction === 1 ? '#16a34a' : '#dc3545'}"></div>
+            </div>
+            <div class="mt-2 font-semibold">${probability}%</div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div class="bg-white/6 p-3 rounded-lg">
+              <h4 class="font-semibold mb-2 text-sm">Recommendations</h4>
+              ${data.recommendations.length ?
+                `<ul class="list-disc ml-4 text-sm">${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`
+                : "<div class='small-muted text-sm'>No recommendations available.</div>"}
+            </div>
+
+            <div class="bg-white/6 p-3 rounded-lg">
+              <h4 class="font-semibold mb-2 text-sm">Success Factors</h4>
+              <canvas id="factorChart" width="220" height="220"></canvas>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h4 class="font-semibold text-sm mb-2">Similar Startups</h4>
+            ${data.similar_startups.length ?
+              `<ul class="list-disc ml-4 text-sm">
+                  ${data.similar_startups.map(s=>`
+                      <li>${s.startup_name} — ₹${Number(s.funding_amount_inr).toLocaleString()} — ${s.is_success ? "Successful" : "Not Successful"}</li>
+                  `).join('')}
+               </ul>`
+            : "<div class='small-muted text-sm'>No close matches found.</div>"}
+          </div>
+        `;
+
+        resultCard.innerHTML = html;
+resultCard.classList.remove("hidden");
+
+// animate bar
+setTimeout(() => {
+    document.getElementById("probFill").style.width = probability + "%";
+}, 200);
+
+// ⭐ IMPORTANT: wait for DOM update so canvas exists
+setTimeout(() => {
+    renderFactorChart();
+}, 150);
+
+
+    } catch (err) {
+        loader.classList.add("hidden");
+        formMsg.innerText = "Server error — check console.";
+        formMsg.className = "text-rose-300";
+    }
+}
+
+/* ---------------------- PIE CHART ---------------------- */
+async function renderFactorChart() {
+    try {
+        const res = await apiFetch("/api/factors");
+        const factors = await res.json();
+
+        const labels = factors.map(f => f.feature);
+        const values = factors.map(f => Math.round(f.importance * 100));
+
+        const ctx = document.getElementById("factorChart").getContext("2d");
+
+        if (window._factorChart) window._factorChart.destroy();
+
+        window._factorChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: [
+                        "rgba(255,206,86,0.9)",
+                        "rgba(75,192,192,0.9)",
+                        "rgba(153,102,255,0.9)",
+                    ]
+                }]
+            },
+            options: { plugins:{ legend:{ position:"bottom" }} }
+        });
+
+    } catch (err) {
+        console.warn("factor chart error:", err);
+    }
+}
+
+/* ---------------------- INIT ---------------------- */
+function resetForm() {
+    document.getElementById("industryInput").value = "";
+    document.getElementById("cityInput").value = "";
+    document.getElementById("funding").value = "";
+    document.getElementById("rounds").value = "";
+    document.getElementById("resultCard").classList.add("hidden");
+}
+
+loadCategories();
+</script>
+
+</body>
+</html>

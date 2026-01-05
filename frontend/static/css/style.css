@@ -1,0 +1,93 @@
+/* ---------- GLOBAL PREMIUM NEON UI ---------- */
+
+/* Body font and smoothness */
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  scroll-behavior: smooth;
+  
+}
+
+/* Glass effect for cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.05);
+  border-radius: 18px;
+}
+
+/* Neon border classes */
+.neon-green {
+  box-shadow: 0 0 14px #4dff7a60, inset 0 0 12px #4dff7a30;
+}
+.neon-red {
+  box-shadow: 0 0 14px #ff4d6d60, inset 0 0 12px #ff4d6d30;
+}
+.neon-blue {
+  box-shadow: 0 0 18px #00e5ff50, inset 0 0 12px #00e5ff30;
+}
+.neon-purple {
+  box-shadow: 0 0 14px #b26bff70, inset 0 0 12px #b26bff30;
+}
+
+/* Hover Scale */
+.hover-scale {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+/* Glowing Buttons */
+.btn-glow {
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.btn-glow:hover {
+  box-shadow: 0 0 12px #ffd54a;
+  transform: scale(1.05);
+}
+
+/* Inputs */
+input, select {
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.20);
+  color: white !important;
+  transition: box-shadow .3s ease;
+}
+input:focus, select:focus {
+  border-color: #00eaff;
+  box-shadow: 0 0 12px #00eaff70;
+}
+
+/* Table */
+.table-glow tr:hover {
+  background: rgba(0, 255, 234, 0.1);
+}
+
+/* Animated underline on navbar links */
+.nav-item {
+  position: relative;
+  padding-bottom: 3px;
+}
+.nav-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: #00eaff;
+  transition: width .3s ease;
+}
+.nav-item:hover::after {
+  width: 100%;
+}
+
+/* Smooth fade */
+.fade-in {
+  animation: fadeIn .5s ease forwards;
+}
+@keyframes fadeIn {
+  from {opacity:0; transform: translateY(8px);}
+  to   {opacity:1; transform: translateY(0);}
+}

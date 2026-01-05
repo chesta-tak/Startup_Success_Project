@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Signup — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: radial-gradient(circle at bottom right, #06254a, #04102c);
+      overflow: hidden;
+    }
+
+    .particle {
+      position:absolute;
+      width:6px;height:6px;border-radius:50%;
+      background:rgba(0,255,255,0.8);
+      filter:blur(2px);
+      animation:float 6s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%{ transform:translate(0,0); opacity:.5 }
+      50%{ transform:translate(-10px,-40px); opacity:1 }
+      100%{ transform:translate(0,0); opacity:.5 }
+    }
+
+    .glass-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(0,255,255,0.25);
+      backdrop-filter: blur(14px);
+      border-radius: 20px;
+      box-shadow: 0 0 26px rgba(0,255,255,0.25);
+    }
+
+    .btn-neon {
+      background: linear-gradient(to right, #00eaff, #00b7ff);
+      box-shadow: 0 0 15px #00eaffaa;
+      transition: .25s;
+    }
+    .btn-neon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px #00eaff;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-white flex items-center justify-center">
+
+  <!-- Particles -->
+  <div class="particle" style="top:20%; left:20%; animation-delay:0s"></div>
+  <div class="particle" style="top:70%; left:70%; animation-delay:.5s"></div>
+  <div class="particle" style="top:45%; left:85%; animation-delay:1s"></div>
+  <div class="particle" style="top:85%; left:30%; animation-delay:1.5s"></div>
+
+  <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 p-6 gap-10">
+
+    <!-- Left text -->
+    <div class="flex flex-col justify-center px-6">
+      <h1 class="text-4xl font-extrabold mb-4 leading-snug">
+        Join  
+        <span class="text-cyan-300">StartupLab 🚀</span>
+      </h1>
+
+      <p class="text-white/80 text-lg">
+        Create an account to begin predicting startup success with AI.
+      </p>
+    </div>
+
+    <!-- Right card -->
+    <div class="glass-card p-8">
+
+      <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
+
+      <input id="name" placeholder="Full Name"
+             class="w-full p-3 bg-white/10 rounded-lg mb-4 outline-none" />
+
+      <input id="email" placeholder="Email"
+             class="w-full p-3 bg-white/10 rounded-lg mb-4 outline-none" />
+
+      <input id="password" type="password" placeholder="Password"
+             class="w-full p-3 bg-white/10 rounded-lg mb-6 outline-none" />
+
+      <button onclick="signup()"
+              class="w-full py-3 rounded-lg font-semibold text-black btn-neon">
+        Signup
+      </button>
+
+      <p class="text-center text-white/75 mt-4">
+        Already have an account?  
+        <a href="login.html" class="text-cyan-300 underline">Login</a>
+      </p>
+
+      <div id="msg" class="text-center mt-3 text-red-300"></div>
+
+    </div>
+  </div>
+
+  <script>
+    async function signup() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!name || !email || !password) {
+        msg.innerText = "Please fill all fields";
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:5000/api/auth/signup", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({name, email, password})
+      });
+
+      const data = await res.json();
+
+      if (res.status === 201) {
+        msg.innerText = "Signup successful. Redirecting...";
+        setTimeout(() => window.location.href = "login.html", 1500);
+      } else {
+        msg.innerText = data.error || "Signup failed";
+      }
+    }
+  </script>
+
+</body>
+</html>
