@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Profile — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- GSAP for subtle motion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+
+  <style>
+    /* premium profile card tweaks */
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+    }
+    .avatar {
+      width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#ffd54a,#ff8a65);display:flex;align-items:center;justify-content:center;font-weight:700;color:#071024;
+    }
+    /* compact stat tile */
+    .stat {
+      min-width:120px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-[#071024] to-[#0b3d91] min-h-screen text-white">
+
+  <nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+    <a href="/" class="text-2xl font-bold">Startup<span class="text-yellow-300">Lab</span></a>
+    <div class="space-x-6">
+      <a href="/predict" class="hover:underline">Predict</a>
+      <a href="/dashboard" class="hover:underline">Dashboard</a>
+      <a href="/history" class="hover:underline">History</a>
+      <button onclick="logout()" class="text-white/90 underline">Logout</button>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- LEFT: profile card -->
+      <div class="glass p-6 rounded-2xl col-span-1">
+        <div class="flex items-center gap-4">
+          <div class="avatar" id="avatarInitial">U</div>
+          <div>
+            <div id="nameText" class="text-2xl font-bold">User Name</div>
+            <div id="emailText" class="text-sm text-white/80">email@example.com</div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-3 gap-3">
+          <div class="stat bg-white/5 p-4 rounded-lg text-center">
+            <div class="text-2xl font-semibold" id="totalPred">0</div>
+            <div class="text-sm text-white/80">Predictions</div>
+          </div>
+
+          <div class="stat bg-white/5 p-4 rounded-lg text-center">
+            <div class="text-2xl font-semibold text-emerald-400" id="succCount">0</div>
+            <div class="text-sm text-white/80">Successes</div>
+          </div>
+
+          <div class="stat bg-white/5 p-4 rounded-lg text-center">
+            <div class="text-2xl font-semibold text-rose-400" id="failCount">0</div>
+            <div class="text-sm text-white/80">Failures</div>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h4 class="font-semibold mb-2">Quick Actions</h4>
+          <div class="flex gap-2">
+            <a href="/predict" class="flex-1 text-center py-2 rounded-lg bg-gradient-to-r from-yellow-300 to-orange-400 text-black">Make Prediction</a>
+            <a href="/history" class="flex-1 text-center py-2 rounded-lg border border-white/10">View History</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIDDLE: Trend chart -->
+      <div class="glass p-6 rounded-2xl col-span-2">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold">Success Score Trend</h3>
+          <div class="text-sm text-white/80">Last 12 predictions</div>
+        </div>
+
+        <div class="mt-4">
+          <canvas id="trendChart" height="120"></canvas>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-white/5 rounded-lg">
+            <h4 class="font-semibold mb-2">Recent Predictions</h4>
+            <div id="recentList" class="space-y-3 text-sm text-white/90 max-h-56 overflow-auto"></div>
+          </div>
+
+          <div class="p-4 bg-white/5 rounded-lg">
+            <h4 class="font-semibold mb-2">Profile Tips</h4>
+            <ul class="list-disc ml-5 text-white/80 text-sm">
+              <li>Use history to track model improvements.</li>
+              <li>Try different funding scenarios for sensitivity.</li>
+              <li>Download history for your reports (coming soon).</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-center text-white/80 py-8">StartupLab • Profile</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script> AOS.init({ duration: 700 }); </script>
+
+  <script src="static/js/main.js"></script> <!-- your existing helper -->
+
+<script>
+if (!localStorage.getItem("token")) {
+    window.location.href = "/login";
+}
+
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+document.getElementById("nameText").innerText = user.name || "User";
+document.getElementById("emailText").innerText = user.email || "";
+document.getElementById("avatarInitial").innerText = (user.name || "U").charAt(0).toUpperCase();
+
+// Load profile summary
+async function loadProfile() {
+    try {
+        const res = await apiFetch("/api/profile_summary?email=" + encodeURIComponent(user.email));
+        if (!res.ok) throw new Error("Profile fetch failed");
+        const data = await res.json();
+
+        document.getElementById("totalPred").innerText = data.total || 0;
+        document.getElementById("succCount").innerText = data.success_count || 0;
+        document.getElementById("failCount").innerText = data.fail_count || 0;
+
+        // Recent list
+        const list = document.getElementById("recentList");
+        list.innerHTML = "";
+        if (data.last_predictions && data.last_predictions.length) {
+            data.last_predictions.forEach(p => {
+                const el = document.createElement("div");
+                el.className = "p-3 bg-white/3 rounded-lg";
+                el.innerHTML = `
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="font-semibold">${p.industry} — ${p.city}</div>
+                      <div class="text-xs text-white/80">₹${Number(p.funding_amount).toLocaleString()} • Rounds: ${p.funding_rounds}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="${p.prediction === 1 ? 'text-emerald-300' : 'text-rose-300'} font-semibold">${p.prediction === 1 ? 'Success' : 'Fail'}</div>
+                      <div class="text-xs text-white/70">${p.timestamp}</div>
+                    </div>
+                  </div>
+                `;
+                list.appendChild(el);
+            });
+        } else {
+            list.innerHTML = "<div class='text-sm text-white/70'>No predictions yet — try making one.</div>";
+        }
+
+        // Trend chart
+        const labels = data.trend.timestamps;
+        const scores = data.trend.scores;
+
+        const ctx = document.getElementById("trendChart").getContext("2d");
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Success Score",
+                    data: scores,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    backgroundColor: "rgba(34,197,94,0.08)",
+                    borderColor: "rgba(34,197,94,0.9)",
+                    pointBackgroundColor: "white"
+                }]
+            },
+            options: {
+                scales: {
+                    y: { min: 0, max: 100 }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+    } catch (err) {
+        console.error("Profile load error:", err);
+    }
+}
+
+loadProfile();
+
+// subtle enter animation
+gsap.from(".glass", { y: 20, opacity: 0, duration: 0.6, stagger: 0.08 });
+</script>
+</body>
+</html>

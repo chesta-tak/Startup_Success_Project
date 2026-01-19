@@ -6,11 +6,15 @@ from flask_jwt_extended import JWTManager
 from auth import auth_bp
 from database.models import save_prediction
 from config import JWT_SECRET_KEY
+from flask import render_template
 import joblib
 import pandas as pd
 
+
+
+
 # Flask App
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 jwt = JWTManager(app)
 CORS(app)
@@ -29,6 +33,35 @@ df = pd.read_csv("data/startup2020_2025_corrected_success_labels.csv")
 # ------------------------------------------
 # GET categories for dropdown
 # ------------------------------------------
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
+
+@app.route("/signup")
+def signup_page():
+    return render_template("signup.html")
+
+@app.route("/dashboard")
+def dashboard_page():
+    return render_template("dashboard.html")
+
+@app.route("/predict")
+def predict_page():
+    return render_template("predict.html")
+
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html")
+
+@app.route("/history")
+def history_page():
+    return render_template("history.html")
+
+
 @app.get("/api/categories")
 def categories():
     industries = sorted(df["industry"].dropna().unique().tolist())
@@ -302,4 +335,9 @@ def profile_summary():
 # RUN SERVER
 # ------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True,
+        use_reloader=False
+    )

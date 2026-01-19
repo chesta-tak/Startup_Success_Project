@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>StartupLab — AI Startup Predictor</title>
+
+  <!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- AOS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+
+  <!-- Global Neon Theme -->
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <style>
+/* ==========================
+      FEATURE CARDS
+=========================== */
+.feature-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.18);
+  border-radius: 18px;
+  padding: 22px;
+  backdrop-filter: blur(12px);
+  transition: .3s ease;
+  box-shadow:
+    0 0 16px rgba(0,255,255,0.25),
+    inset 0 0 12px rgba(0,255,255,0.12);
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 26px rgba(0,255,255,0.45),
+    inset 0 0 16px rgba(0,255,255,0.18);
+}
+
+/* ==========================
+      GAUGE FX CONTAINER
+=========================== */
+.gauge-wrapper{
+  position:relative;
+  width:260px;
+  height:260px;
+  transform-style:preserve-3d;
+  cursor:pointer;
+}
+
+/* Floating neon particles */
+.particle{
+  position:absolute;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:rgba(0,255,255,0.9);
+  filter:blur(1px);
+  animation:floatParticle 4s infinite ease-in-out;
+}
+@keyframes floatParticle{
+  0%{ transform:translate(0,0); opacity:0.8 }
+  50%{ transform:translate(12px,-18px); opacity:1 }
+  100%{ transform:translate(0,0); opacity:0.8 }
+}
+
+/* Ripple Glow */
+.ripple-ring{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:290px; height:290px;
+  border-radius:50%;
+  border:2px solid rgba(0,255,255,0.4);
+  animation:ripple 3s infinite ease-out;
+}
+@keyframes ripple {
+  0%{ transform:translate(-50%,-50%) scale(0.9); opacity:0.8 }
+  100%{ transform:translate(-50%,-50%) scale(1.3); opacity:0 }
+}
+
+/* AI Core Pulse */
+.core {
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:70px; height:70px;
+  background: radial-gradient(circle, rgba(0,255,255,1), rgba(0,80,255,0.4));
+  border-radius:50%;
+  filter:blur(5px);
+  animation: corePulse 2s infinite ease-in-out;
+}
+@keyframes corePulse {
+  0%{ transform:translate(-50%,-50%) scale(0.85); opacity:0.7 }
+  50%{ transform:translate(-50%,-50%) scale(1.2); opacity:1 }
+  100%{ transform:translate(-50%,-50%) scale(0.85); opacity:0.7 }
+}
+
+/* Rotating % text */
+.percent-text {
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  font-size:2.4rem;
+  font-weight:700;
+  color:#baffff;
+  text-shadow:0 0 12px rgba(0,255,255,0.9);
+  animation: rotateText 12s linear infinite;
+}
+@keyframes rotateText {
+  0% { transform:translate(-50%,-50%) rotate(0deg); }
+  100% { transform:translate(-50%,-50%) rotate(360deg); }
+}
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-[#071024] to-[#0b3d91] min-h-screen text-white">
+
+<!-- NAV -->
+<nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+  <a href="/" class="text-2xl font-bold">Startup<span class="text-yellow-300">Lab</span></a>
+
+  <div class="space-x-6">
+    <a onclick="goToPredict()" class="nav-item">Predict</a>
+    <a onclick="goToDashboard()" class="nav-item">Dashboard</a>
+    <a href="/history" class="nav-item">History</a>
+    <a href="/profile" class="nav-item">Profile</a>
+    <a href="/login" class="nav-item underline">Login</a>
+  </div>
+</nav>
+
+
+<!-- HERO -->
+<header class="max-w-6xl mx-auto px-6 py-16 flex flex-col lg:flex-row items-center gap-12">
+
+  <div class="flex-1" data-aos="fade-right">
+    <h1 class="text-5xl font-extrabold mb-4 leading-snug">
+      Predict Your Startup’s  
+      <span class="text-yellow-300">Success with AI 🚀</span>
+    </h1>
+
+    <p class="text-lg opacity-90 mb-6">
+      Instantly check the success probability of your startup based on real Indian funding data (2020–2025).
+    </p>
+
+    <div class="flex gap-4">
+      <button onclick="goToPredict()" class="px-6 py-3 bg-gradient-to-r from-yellow-300 to-orange-400 rounded-lg font-semibold text-black btn-glow">
+        Predict Now
+      </button>
+      <button onclick="goToDashboard()" class="px-6 py-3 border border-white/30 rounded-lg hover:bg-white/10 transition">
+        View Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: SUPER ANIMATED GAUGE -->
+  <div class="flex-1 flex justify-center" data-aos="zoom-in">
+
+    <div class="gauge-wrapper" id="gaugeWrapper">
+
+      <div class="ripple-ring"></div>
+      <div class="core" id="coreGlow"></div>
+      <div class="percent-text" id="percentText">85%</div>
+
+      <div class="particle" style="top:20%; left:10%; animation-delay:0s;"></div>
+      <div class="particle" style="top:70%; left:80%; animation-delay:.5s;"></div>
+      <div class="particle" style="top:40%; left:90%; animation-delay:1s;"></div>
+      <div class="particle" style="top:85%; left:20%; animation-delay:1.5s;"></div>
+
+      <canvas id="gaugeChart" width="250" height="250"></canvas>
+    </div>
+
+  </div>
+
+</header>
+
+
+<!-- FEATURES -->
+<section class="max-w-6xl mx-auto p-6">
+  <h2 class="text-3xl font-bold mb-8 text-center">Why Choose StartupLab?</h2>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="feature-card" data-aos="fade-up">
+      <h4 class="text-xl font-semibold mb-2">🔮 AI Prediction Engine</h4>
+      <p class="text-white/90">Instant probability based on industry, city & funding.</p>
+    </div>
+
+    <div class="feature-card" data-aos="fade-up" data-aos-delay="120">
+      <h4 class="text-xl font-semibold mb-2">📊 Interactive Analytics</h4>
+      <p class="text-white/90">Explore powerful charts & data insights.</p>
+    </div>
+
+    <div class="feature-card" data-aos="fade-up" data-aos-delay="240">
+      <h4 class="text-xl font-semibold mb-2">⚡ Smart Recommendations</h4>
+      <p class="text-white/90">AI-powered suggestions for growth.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="text-center text-white/80 py-8">
+  Made with ❤️ — Startup Success Prediction Platform
+</footer>
+
+
+<!-- SCRIPT -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+AOS.init({ duration: 900, once:true });
+
+/* ==========================
+   ☢️ GAUGE INITIALIZATION 
+========================== */
+let gaugeChart;
+
+window.addEventListener("load", () => {
+
+  const ctx = document.getElementById("gaugeChart").getContext("2d");
+
+  gaugeChart = new Chart(ctx,{
+    type:"doughnut",
+    data:{
+      datasets:[{
+        data:[85,15],
+        backgroundColor:["cyan","rgba(255,255,255,0.13)"],
+        borderWidth:0,
+        cutout:"72%"
+      }]
+    },
+    options:{
+      plugins:{ legend:{display:false}},
+      animation:{ animateRotate:true, duration:1400 }
+    }
+  });
+
+  animateGaugeLoop();
+});
+
+
+/* =========================================================
+     🌈 AUTO-CHANGING GAUGE (smooth easing + recolor)
+========================================================= */
+function getGaugeColor(percent){
+  if(percent < 45) return "rgba(255,70,70,1)";      // red
+  if(percent < 60) return "rgba(255,200,0,1)";      // yellow
+  if(percent < 75) return "rgba(0,255,140,1)";      // green
+  return "rgba(0,255,255,1)";                       // neon cyan
+}
+
+function animateGaugeLoop(){
+
+  let newPercent = Math.floor(Math.random()*50)+50; // 50–100%
+  const text = document.getElementById("percentText");
+  const core = document.getElementById("coreGlow");
+
+  // smooth % transition
+  let start = parseInt(text.innerText);
+  let step = 0;
+  let steps = 40;
+
+  let interval = setInterval(()=>{
+    step++;
+    let eased = start + (newPercent-start)*(step/steps);
+    text.innerText = Math.round(eased)+"%";
+
+    // update color dynamically
+    let color = getGaugeColor(eased);
+    gaugeChart.data.datasets[0].backgroundColor[0] = color;
+    gaugeChart.update("none");
+
+    // sync core glow brightness
+    core.style.boxShadow = `0 0 ${10 + eased/4}px ${color}`;
+    core.style.background = `radial-gradient(circle, ${color}, rgba(0,60,255,0.4))`;
+
+    if(step >= steps) clearInterval(interval);
+
+  }, 40);
+
+  // repeat
+  setTimeout(animateGaugeLoop, 3000);
+}
+
+
+/* ==========================
+     3D Tilt Interaction
+========================== */
+const wrapper = document.getElementById("gaugeWrapper");
+
+wrapper.addEventListener("mousemove",(e)=>{
+  const r = wrapper.getBoundingClientRect();
+  const x = (e.clientX - r.left)/r.width - 0.5;
+  const y = (e.clientY - r.top)/r.height -0.5;
+  wrapper.style.transform = `rotateX(${y*18}deg) rotateY(${x*18}deg)`
+});
+
+wrapper.addEventListener("mouseleave",()=>{
+  wrapper.style.transform="rotateX(0) rotateY(0)";
+});
+
+
+/* ==========================
+      REDIRECT FUNCTIONS
+========================== */
+function goToPredict(){ 
+  if(!localStorage.getItem("token")) location="/login"; 
+  else location="/predict"; 
+}
+function goToDashboard(){ 
+  if(!localStorage.getItem("token")) location="/login"; 
+  else location="/dashboard"; 
+}
+
+</script>
+
+</body>
+</html>

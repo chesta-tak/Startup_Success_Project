@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- AOS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+
+  <!-- Global Neon Theme -->
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <style>
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0,255,255,0.18);
+      backdrop-filter: blur(12px);
+      padding: 22px;
+      border-radius: 18px;
+      min-height: 320px;
+      box-shadow:
+        0 0 16px rgba(0,255,255,0.28),
+        inset 0 0 12px rgba(0,255,255,0.15);
+      transition: 0.3s ease-in-out;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        0 0 26px rgba(0,255,255,0.45),
+        inset 0 0 14px rgba(0,255,255,0.25);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 260px !important;
+    }
+
+    #dashLoader {
+      padding: 20px;
+      text-align: center;
+      color: #bffcff;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-[#071024] to-[#0b3d91] min-h-screen text-white">
+
+<nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+  <a href="/" class="text-2xl font-bold">Startup<span class="text-yellow-300">Lab</span></a>
+
+  <div class="space-x-6">
+    <a href="/predict" class="nav-item">Predict</a>
+    <a href="/history" class="nav-item">History</a>
+    <a href="/profile" class="nav-item">Profile</a>
+    <button onclick="logout()" class="underline text-white/90">Logout</button>
+  </div>
+</nav>
+
+<main class="max-w-6xl mx-auto p-6">
+
+  <h1 class="text-3xl font-bold mb-6">📊 Dashboard Analytics</h1>
+
+  <div id="dashLoader">Loading dashboard… ⏳</div>
+
+  <section id="dashContent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <div class="card" data-aos="fade-up">
+      <h3 class="text-lg font-semibold mb-3">Top Industries (by count)</h3>
+      <canvas id="chartIndustriesCount"></canvas>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-delay="150">
+      <h3 class="text-lg font-semibold mb-3">Top Cities (by count)</h3>
+      <canvas id="chartCitiesCount"></canvas>
+    </div>
+
+    <div class="card" data-aos="fade-up">
+      <h3 class="text-lg font-semibold mb-3">Industry Success Rates</h3>
+      <canvas id="chartIndustrySuccess"></canvas>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-delay="150">
+      <h3 class="text-lg font-semibold mb-3">City Success Rates</h3>
+      <canvas id="chartCitySuccess"></canvas>
+    </div>
+
+    <div class="card" data-aos="fade-up">
+      <h3 class="text-lg font-semibold mb-3">Funding Distribution</h3>
+      <canvas id="fundingDistChart"></canvas>
+    </div>
+
+    <div class="card" data-aos="fade-up" data-aos-delay="150">
+      <h3 class="text-lg font-semibold mb-3">Top Investors</h3>
+      <canvas id="topInvestorsChart"></canvas>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="text-center text-white/80 py-6">
+  StartupLab • India Startup Analytics (2020–2025)
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="static/js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+
+<script>
+AOS.init({ duration: 800, once: true });
+
+Chart.defaults.color = "#cfffff";
+Chart.defaults.borderColor = "rgba(0,255,255,0.25)";
+Chart.defaults.scale.grid.color = "rgba(0,255,255,0.20)";
+
+if (!localStorage.getItem("token")) window.location.href = "/login";
+
+
+/* --------------------- LOAD DASHBOARD --------------------- */
+async function loadDashboard() {
+    try {
+        const res = await apiFetch("/api/dashboard");
+        const data = await res.json();
+
+        if (!data || !data.top_industries_count) {
+            document.getElementById("dashLoader").innerText = "Failed to load dashboard.";
+            return;
+        }
+
+        document.getElementById("dashLoader").classList.add("hidden");
+        document.getElementById("dashContent").classList.remove("hidden");
+
+        setTimeout(() => renderCharts(data), 100);
+
+    } catch (err) {
+        console.error("Dashboard error:", err);
+        document.getElementById("dashLoader").innerText = "Error loading data.";
+    }
+}
+
+
+/* --------------------- RENDER CHARTS --------------------- */
+function renderCharts(data) {
+
+    new Chart(chartIndustriesCount, {
+        type: "bar",
+        data: {
+            labels: data.top_industries_count.map(x => x.industry),
+            datasets: [{
+                label: "Count",
+                backgroundColor: "rgba(0,229,255,0.6)",
+                data: data.top_industries_count.map(x => x.count),
+            }]
+        }
+    });
+
+    new Chart(chartCitiesCount, {
+        type: "bar",
+        data: {
+            labels: data.top_cities_count.map(x => x.city),
+            datasets: [{
+                label: "Count",
+                backgroundColor: "rgba(255,206,86,0.7)",
+                data: data.top_cities_count.map(x => x.count),
+            }]
+        }
+    });
+
+    new Chart(chartIndustrySuccess, {
+        type: "bar",
+        data: {
+            labels: data.top_industries_success.map(x => x.industry),
+            datasets: [{
+                label: "Success %",
+                backgroundColor: "rgba(75,192,192,0.7)",
+                data: data.top_industries_success.map(x => (x.success_rate * 100).toFixed(1)),
+            }]
+        },
+        options: { indexAxis: "y" }
+    });
+
+    new Chart(chartCitySuccess, {
+        type: "bar",
+        data: {
+            labels: data.top_cities_success.map(x => x.city),
+            datasets: [{
+                label: "Success %",
+                backgroundColor: "rgba(153,102,255,0.7)",
+                data: data.top_cities_success.map(x => (x.success_rate * 100).toFixed(1)),
+            }]
+        },
+        options: { indexAxis: "y" }
+    });
+
+
+    /* ------------ Funding Distribution Chart ------------ */
+    apiFetch("/api/funding_distribution")
+        .then(res => res.json())
+        .then(dist => {
+            new Chart(fundingDistChart, {
+                type: "bar",
+                data: {
+                    labels: dist.ranges,
+                    datasets: [{
+                        label: "Startup Count",
+                        backgroundColor: "rgba(255,159,64,0.8)",
+                        data: dist.counts
+                    }]
+                }
+            });
+        });
+
+
+    /* ---------------- Top Investors Chart ---------------- */
+    apiFetch("/api/top_investors")
+        .then(res => res.json())
+        .then(inv => {
+            new Chart(topInvestorsChart, {
+                type: "bar",
+                data: {
+                    labels: inv.investors,
+                    datasets: [{
+                        label: "Investment Count",
+                        backgroundColor: "rgba(54,162,235,0.8)",
+                        data: inv.counts
+                    }]
+                }
+            });
+        });
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

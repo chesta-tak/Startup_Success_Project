@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Prediction History — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <style>
+    /* Neon table container */
+    .history-table-container{
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0,255,255,0.18);
+      backdrop-filter: blur(12px);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 0 18px rgba(0,255,255,0.25), inset 0 0 12px rgba(0,255,255,0.12);
+    }
+
+    .history-row:hover{
+      background: rgba(0,255,255,0.08);
+      transition: .3s;
+    }
+
+    /* Status Badges */
+    .badge {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-success {
+      background: rgba(0,255,180,0.2);
+      color: #00ffb4;
+      box-shadow: 0 0 8px #00ffb460;
+    }
+    .badge-fail {
+      background: rgba(255,60,80,0.2);
+      color: #ff3c50;
+      box-shadow: 0 0 8px #ff3c5080;
+    }
+
+    /* Remove mobile card mode completely */
+    @media (max-width:760px){
+      table { font-size: 0.8rem; }
+      th, td { padding: 6px !important; }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-[#071024] to-[#0b3d91] min-h-screen text-white">
+
+<!-- NAV -->
+<nav class="max-w-6xl mx-auto p-6 flex justify-between items-center">
+  <a href="/" class="text-2xl font-bold">Startup<span class="text-yellow-300">Lab</span></a>
+  <div class="space-x-6">
+    <a href="/predict" class="nav-item">Predict</a>
+    <a href="/dashboard" class="nav-item">Dashboard</a>
+    <a href="/profile" class="nav-item">Profile</a>
+    <button onclick="logout()" class="nav-item underline">Logout</button>
+  </div>
+</nav>
+
+<main class="max-w-6xl mx-auto p-6">
+  <h1 class="text-3xl font-bold mb-6">📜 Your Prediction History</h1>
+
+  <!-- Search & Filters -->
+  <div class="flex flex-wrap gap-3 mb-4">
+    <input id="searchBox" type="text" placeholder="Search industry or city…" 
+      class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white w-full md:w-1/3">
+
+    <select id="filterIndustry" 
+      class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white w-full md:w-1/4">
+      <option value="">All Industries</option>
+    </select>
+
+    <select id="filterCity" 
+      class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white w-full md:w-1/4">
+      <option value="">All Cities</option>
+    </select>
+  </div>
+
+  <!-- Neon Table -->
+  <div class="history-table-container" id="historyContainer">
+      <p>Loading history...</p>
+  </div>
+
+</main>
+
+<script src="static/js/main.js"></script>
+
+<script>
+if(!localStorage.getItem("token")){
+  window.location.href="/login";
+}
+
+let globalHistory=[];
+
+async function loadHistory(){
+  const user = JSON.parse(localStorage.getItem("user"));
+  const res = await apiFetch(`/api/history?email=${user.email}`);
+  const data = await res.json();
+  globalHistory = data;
+
+  populateFilters(data);
+  renderHistory(data);
+}
+
+function populateFilters(data){
+  const industries=[...new Set(data.map(x=>x.industry))];
+  const cities=[...new Set(data.map(x=>x.city))];
+
+  industries.forEach(i =>
+    filterIndustry.innerHTML += `<option value="${i}">${i}</option>`
+  );
+  cities.forEach(c =>
+    filterCity.innerHTML += `<option value="${c}">${c}</option>`
+  );
+}
+
+function renderHistory(list){
+  const box=document.getElementById("historyContainer");
+
+  if(list.length===0){
+    box.innerHTML="<p>No predictions yet.</p>";
+    return;
+  }
+
+  let html=`
+  <table class="w-full border-collapse">
+    <thead>
+      <tr class="text-left border-b border-white/20">
+        <th class="p-2">Industry</th>
+        <th class="p-2">City</th>
+        <th class="p-2">Funding</th>
+        <th class="p-2">Rounds</th>
+        <th class="p-2">Prob %</th>
+        <th class="p-2">Prediction</th>
+        <th class="p-2">Time</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+
+  list.forEach(r=>{
+    const badge = r.prediction===1
+      ? `<span class="badge badge-success">Success</span>`
+      : `<span class="badge badge-fail">Fail</span>`;
+
+    html+=`
+      <tr class="border-b border-white/10 history-row">
+        <td class="p-2">${r.industry}</td>
+        <td class="p-2">${r.city}</td>
+        <td class="p-2">₹${Number(r.funding_amount).toLocaleString()}</td>
+        <td class="p-2">${r.funding_rounds}</td>
+        <td class="p-2">${(r.probability*100).toFixed(1)}%</td>
+        <td class="p-2">${badge}</td>
+        <td class="p-2 text-xs">${r.timestamp}</td>
+      </tr>
+    `;
+  });
+
+  html+="</tbody></table>";
+  box.innerHTML=html;
+}
+
+function applyFilters(){
+  let text = searchBox.value.toLowerCase();
+  let ind = filterIndustry.value;
+  let city = filterCity.value;
+
+  let filtered = globalHistory.filter(r=>{
+    return(
+      (r.industry.toLowerCase().includes(text) || r.city.toLowerCase().includes(text)) &&
+      (ind==="" || r.industry===ind) &&
+      (city==="" || r.city===city)
+    );
+  });
+
+  renderHistory(filtered);
+}
+
+searchBox.onkeyup = applyFilters;
+filterIndustry.onchange = applyFilters;
+filterCity.onchange = applyFilters;
+
+loadHistory();
+</script>
+
+</body>
+</html>

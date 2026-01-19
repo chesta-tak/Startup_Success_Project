@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login — StartupLab</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="static/css/style.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: radial-gradient(circle at top left, #07203d, #04102c);
+      overflow: hidden;
+    }
+
+    /* Floating particles */
+    .particle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(0,255,255,0.8);
+      filter: blur(2px);
+      animation: float 6s infinite ease-in-out;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) translateX(0); opacity: 0.5; }
+      50% { transform: translateY(-40px) translateX(20px); opacity: 1; }
+      100% { transform: translateY(0) translateX(0); opacity: 0.5; }
+    }
+
+    /* Neon glass card */
+    .glass-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(0,255,255,0.25);
+      border-radius: 20px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 26px rgba(0,255,255,0.22);
+    }
+
+    /* Glowing button */
+    .btn-neon {
+      background: linear-gradient(to right, #00eaff, #00b7ff);
+      box-shadow: 0 0 15px #00eaffaa;
+      transition: .25s;
+    }
+    .btn-neon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px #00eaff;
+    }
+
+  </style>
+</head>
+
+<body class="min-h-screen text-white flex items-center justify-center">
+
+  <!-- Neon particles -->
+  <div class="particle" style="top:20%; left:10%; animation-delay:0s"></div>
+  <div class="particle" style="top:60%; left:30%; animation-delay:1s"></div>
+  <div class="particle" style="top:40%; left:80%; animation-delay:.5s"></div>
+  <div class="particle" style="top:80%; left:60%; animation-delay:1.5s"></div>
+
+  <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 p-6 gap-10">
+
+    <!-- LEFT SIDE TEXT -->
+    <div class="flex flex-col justify-center px-6">
+      <h1 class="text-4xl font-extrabold mb-4 leading-snug">
+        Welcome Back to  
+        <span class="text-cyan-300">StartupLab ✨</span>
+      </h1>
+
+      <p class="text-white/80 text-lg">
+        Log in and continue analyzing your startup's success potential using AI.
+      </p>
+    </div>
+
+    <!-- RIGHT SIDE LOGIN BOX -->
+    <div class="glass-card p-8 shadow-xl">
+
+      <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+
+      <input id="email" placeholder="Email"
+             class="w-full p-3 bg-white/10 rounded-lg mb-4 outline-none" />
+
+      <input id="password" type="password" placeholder="Password"
+             class="w-full p-3 bg-white/10 rounded-lg mb-6 outline-none" />
+
+      <button onclick="login()"
+              class="w-full py-3 rounded-lg font-semibold text-black btn-neon">
+        Login
+      </button>
+
+      <p class="text-center text-white/75 mt-4">
+        No account? <a href="/signup" class="text-cyan-300 underline">Signup</a>
+      </p>
+
+      <div id="msg" class="mt-4 text-center text-red-300"></div>
+
+    </div>
+  </div>
+
+  <script src="static/js/main.js"></script>
+  <script>
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        msg.innerText = "Please fill all fields";
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:5000/api/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email, password})
+      });
+
+      const data = await res.json();
+
+      if (res.status === 200) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.location.href = "/predict";
+      } else {
+        msg.innerText = data.error || "Login failed";
+      }
+    }
+  </script>
+
+</body>
+</html>
